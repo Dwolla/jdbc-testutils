@@ -12,6 +12,7 @@ ThisBuild / developers := List(
   ),
 )
 ThisBuild / startYear := Option(2024)
+ThisBuild / tlJdkRelease := Option(8)
 ThisBuild / githubWorkflowJavaVersions := Seq(JavaSpec.temurin("17"))
 ThisBuild / tlCiReleaseBranches := Seq("main")
 ThisBuild / tlBaseVersion := "0.1"
@@ -26,4 +27,18 @@ lazy val `jdbc-testutils` = project
   .in(file("."))
   .settings(
     description := "JDBC Test Utilities",
+    libraryDependencies ++= {
+      val munitVersion = "1.0.0"
+
+      Seq(
+        "com.chuusai" %% "shapeless" % "2.3.12",
+        "com.h2database" % "h2" % "2.2.224",
+        "org.scalameta" %% "munit" % munitVersion % Test,
+        "org.scalameta" %% "munit-scalacheck" % munitVersion % Test,
+      ) ++
+        Option(scalaVersion.value)
+          .filter(_.startsWith("2.12"))
+          .map(_ => "org.scala-lang" % "scala-reflect" % scalaVersion.value)
+          .toList
+    },
   )
