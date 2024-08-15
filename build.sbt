@@ -33,6 +33,7 @@ lazy val `jdbc-testutils` = project
       Seq(
         "com.chuusai" %% "shapeless" % "2.3.12",
         "com.h2database" % "h2" % "2.2.224",
+        "com.disneystreaming.smithy4s" %%% "smithy4s-core" % smithy4sVersion.value,
         "org.scalameta" %% "munit" % munitVersion % Test,
         "org.scalameta" %% "munit-scalacheck" % munitVersion % Test,
       ) ++
@@ -41,4 +42,15 @@ lazy val `jdbc-testutils` = project
           .map(_ => "org.scala-lang" % "scala-reflect" % scalaVersion.value)
           .toList
     },
+    scalacOptions ++= (if (scalaVersion.value.startsWith("2.13")) List("-Vimplicits") else Nil)
   )
+  .dependsOn(smithy4sNewtypes % Test)
+
+lazy val smithy4sNewtypes = project
+  .in(file("smithy4s"))
+  .settings(
+    libraryDependencies ++= Seq(
+      "com.disneystreaming.smithy4s" %%% "smithy4s-core" % smithy4sVersion.value,
+    )
+  )
+  .enablePlugins(Smithy4sCodegenPlugin, NoPublishPlugin)

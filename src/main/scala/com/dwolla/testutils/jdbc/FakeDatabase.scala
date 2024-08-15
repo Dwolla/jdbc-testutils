@@ -29,7 +29,7 @@ object FakeDatabase {
                                                                                      ev0: ColumnNamesAndTypes[Columns],
                                                                                      ev1: ToTraversable.Aux[Columns, List, (String, Int)],
                                                                                      m: Mapper.Aux[OptionsToNull.type, Row, NullableRow],
-                                                                                     ev2: ToTraversable.Aux[NullableRow, List, AnyRef],
+                                                                                     ev2: ToTraversable.Aux[NullableRow, List, Any],
                                                                                      s1: hlist.Length.Aux[Columns, S],
                                                                                      @implicitNotFound("make sure the number of columns matches the number of values in each row")
                                                                                      s2: hlist.Length.Aux[NullableRow, S],
@@ -60,7 +60,8 @@ object FakeDatabase {
                                                                                     @unused ev0: ColumnNamesAndTypes[Columns],
                                                                                     ev1: ToTraversable.Aux[Columns, List, (String, Int)],
                                                                                     m: Mapper.Aux[OptionsToNull.type, Row, NullableRow],
-                                                                                    ev2: ToTraversable.Aux[NullableRow, List, AnyRef],
+                                                                                    @implicitNotFound("Make sure all the fields in the row type are nullable")
+                                                                                    ev2: ToTraversable.Aux[NullableRow, List, Any],
                                                                                     @unused s1: hlist.Length.Aux[Columns, S],
                                                                                     @implicitNotFound("make sure the number of columns matches the number of values in each row")
                                                                                     @unused s2: hlist.Length.Aux[NullableRow, S],
@@ -93,7 +94,7 @@ object FakeDatabase {
     }
 
     for ((name, tpe) <- columns.toList) rs.addColumn(name, tpe, Integer.MAX_VALUE, 0)
-    for (row <- rows) rs.addRow(row.map(OptionsToNull).toList *)
+    for (row <- rows) rs.addRow(row.map(OptionsToNull).toList.asInstanceOf[Seq[AnyRef]] *)
 
     rs
   }

@@ -194,4 +194,5 @@ jobs:
       - name: Submit Dependencies
         uses: scalacenter/sbt-dependency-submission@v2
         with:
+          modules-ignore: smithy4snewtypes_2.13 smithy4snewtypes_2.12
           configs-ignore: test scala-tool scala-doc-tool test-internal
