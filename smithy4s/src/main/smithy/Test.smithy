@@ -2,6 +2,7 @@ $version: "2.0"
 namespace com.dwolla.test
 
 string MySmithy4sNewtype
+integer Smithy4sPrimitiveNewtype
 
 list MyList {
     member: String

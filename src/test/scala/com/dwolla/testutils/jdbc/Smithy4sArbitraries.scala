@@ -12,6 +12,9 @@ trait Smithy4sArbitraries {
   implicit val arbMySmithy4sNewtype: Arbitrary[MySmithy4sNewtype] =
     Arbitrary(arbitrary[String].map(MySmithy4sNewtype(_)))
 
+  implicit val arbSmithy4sPrimitiveNewtype: Arbitrary[Smithy4sPrimitiveNewtype] =
+    Arbitrary(arbitrary[Int].map(Smithy4sPrimitiveNewtype(_)))
+
   implicit val arbMyList: Arbitrary[MyList] =
     Arbitrary(arbitrary[List[String]].map(MyList(_)))
 

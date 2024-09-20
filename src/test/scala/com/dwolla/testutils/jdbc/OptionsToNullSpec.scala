@@ -11,7 +11,8 @@ class OptionsToNullSpec
     with Smithy4sArbitraries {
 
   test("Empty options in HLists are mapped to null") {
-    case class Smithy4sExamples(maybeSmithy4sNewType: Option[MySmithy4sNewtype],
+    case class Smithy4sExamples(maybeSmithy4sPrimitiveNewtype: Option[Smithy4sPrimitiveNewtype],
+                                maybeSmithy4sNewType: Option[MySmithy4sNewtype],
                                 maybeList: Option[MyList],
                                 maybeMap: Option[MyMap],
                                 maybeStruct: Option[MyStructure],
@@ -22,6 +23,7 @@ class OptionsToNullSpec
     object Smithy4sExamples {
       implicit val arbSmithy4sExamples: Arbitrary[Smithy4sExamples] = Arbitrary {
         for {
+          maybeSmithy4sPrimitiveNewtype <- arbitrary[Option[Smithy4sPrimitiveNewtype]]
           maybeSmithy4sNewType <- arbitrary[Option[MySmithy4sNewtype]]
           maybeList <- arbitrary[Option[MyList]]
           maybeMap <- arbitrary[Option[MyMap]]
@@ -29,7 +31,7 @@ class OptionsToNullSpec
           maybeUnion <- arbitrary[Option[MyUnion]]
           maybeEnum <- arbitrary[Option[MyEnum]]
           maybeMyRecursive <- arbitrary[Option[MyRecursive]]
-        } yield Smithy4sExamples(maybeSmithy4sNewType, maybeList, maybeMap, maybeStruct, maybeUnion, maybeEnum, maybeMyRecursive)
+        } yield Smithy4sExamples(maybeSmithy4sPrimitiveNewtype, maybeSmithy4sNewType, maybeList, maybeMap, maybeStruct, maybeUnion, maybeEnum, maybeMyRecursive)
       }
     }
 
@@ -42,9 +44,10 @@ class OptionsToNullSpec
                           ) =>
       val input =
         maybeInt ::
+          smithy4sExamples.maybeSmithy4sPrimitiveNewtype ::
+          smithy4sExamples.maybeSmithy4sNewType ::
           maybeString ::
           maybeInteger ::
-          smithy4sExamples.maybeSmithy4sNewType ::
           smithy4sExamples.maybeList ::
           smithy4sExamples.maybeMap ::
           smithy4sExamples.maybeStruct ::
@@ -59,9 +62,10 @@ class OptionsToNullSpec
 
       val expected =
         maybeInt.fold[Integer](null)(identity) ::
+          smithy4sExamples.maybeSmithy4sPrimitiveNewtype.fold[Integer](null)(_.value) ::
+          smithy4sExamples.maybeSmithy4sNewType.fold[String](null)(_.value) ::
           maybeString.fold[String](null)(identity) ::
           maybeInteger.fold[Integer](null)(identity) ::
-          smithy4sExamples.maybeSmithy4sNewType.fold[String](null)(_.value) ::
           smithy4sExamples.maybeList.fold[List[String]](null)(_.value) ::
           smithy4sExamples.maybeMap.fold[Map[String, Int]](null)(_.value) ::
           smithy4sExamples.maybeStruct.fold[MyStructure](null)(identity) ::
