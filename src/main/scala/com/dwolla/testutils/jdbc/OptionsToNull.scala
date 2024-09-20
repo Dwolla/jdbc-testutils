@@ -60,40 +60,39 @@ sealed trait Nullable[A] { outer =>
 }
 
 private sealed trait SafeNullable[A] extends Nullable[A] {
-  override type B >: Null
+  override type B <: AnyRef
 }
 
 object Nullable extends Smithy4sNullableInstances {
   type Aux[A, B1] = Nullable[A] { type B = B1 }
   def apply[A](implicit ev: Nullable[A]): ev.type = ev
 
-  implicit val nullableChar: Nullable.Aux[Char, java.lang.Character] = makeConversion(char2Character)
-  implicit val nullableShort: Nullable.Aux[Short, java.lang.Short] = makeConversion(short2Short)
-  implicit val nullableInt: Nullable.Aux[Int, java.lang.Integer] = makeConversion(int2Integer)
-  implicit val nullableFloat: Nullable.Aux[Float, java.lang.Float] = makeConversion(float2Float)
-  implicit val nullableLong: Nullable.Aux[Long, java.lang.Long] = makeConversion(long2Long)
-  implicit val nullableDouble: Nullable.Aux[Double, java.lang.Double] = makeConversion(double2Double)
-  implicit val nullableBoolean: Nullable.Aux[Boolean, java.lang.Boolean] = makeConversion(boolean2Boolean)
-  implicit val nullableByte: Nullable.Aux[Byte, java.lang.Byte] = makeConversion(byte2Byte)
-
-  implicit def nullableAnyRef[A >: Null]: Nullable.Aux[A, A] = new SafeNullable[A] {
+  @deprecated("use nullableAnyRefViaConversion", "0.1.1") val nullableChar: Nullable.Aux[Char, java.lang.Character] = makeConversion(char2Character)
+  @deprecated("use nullableAnyRefViaConversion", "0.1.1") val nullableShort: Nullable.Aux[Short, java.lang.Short] = makeConversion(short2Short)
+  @deprecated("use nullableAnyRefViaConversion", "0.1.1") val nullableInt: Nullable.Aux[Int, java.lang.Integer] = makeConversion(int2Integer)
+  @deprecated("use nullableAnyRefViaConversion", "0.1.1") val nullableFloat: Nullable.Aux[Float, java.lang.Float] = makeConversion(float2Float)
+  @deprecated("use nullableAnyRefViaConversion", "0.1.1") val nullableLong: Nullable.Aux[Long, java.lang.Long] = makeConversion(long2Long)
+  @deprecated("use nullableAnyRefViaConversion", "0.1.1") val nullableDouble: Nullable.Aux[Double, java.lang.Double] = makeConversion(double2Double)
+  @deprecated("use nullableAnyRefViaConversion", "0.1.1") val nullableBoolean: Nullable.Aux[Boolean, java.lang.Boolean] = makeConversion(boolean2Boolean)
+  @deprecated("use nullableAnyRefViaConversion", "0.1.1") val nullableByte: Nullable.Aux[Byte, java.lang.Byte] = makeConversion(byte2Byte)
+  @deprecated("use nullableAnyRefViaConversion", "0.1.1") def nullableAnyRef[A <: AnyRef]: Nullable.Aux[A, A] = new SafeNullable[A] {
     override type B = A
     override val f: A => B = identity
   }
 
-  private[jdbc] def makeConversion[A, B1 >: Null](f1: A => B1): Nullable.Aux[A, B1] = new SafeNullable[A] {
+  implicit def nullableAnyRefViaConversion[A, BB <: AnyRef](implicit ff: A => BB): Nullable.Aux[A, BB] =
+    new SafeNullable[A] {
+      override type B = BB
+      override val f: A => BB = ff
+    }
+
+  private[jdbc] def makeConversion[A, B1 <: AnyRef](f1: A => B1): Nullable.Aux[A, B1] = new SafeNullable[A] {
     override type B = B1
     override val f: A => B = f1
   }
 
-  implicit def nullableFromBijection[A >: Null, BB <: Newtype[A]#Type](implicit B: Bijection[A, BB]): Nullable.Aux[BB, A] =
-    new SafeNullable[BB] {
-      override type B = A
-      override val f: BB => A = implicitly[Bijection[A, BB]].from
-    }
-
-  implicit def nullableFromPrimitiveBijection[A, BB <: Newtype[A]#Type, C >: Null](implicit B: Bijection[A, BB],
-                                                                                   C: A => C): Nullable.Aux[BB, C] =
+  implicit def nullableFromBijection[A, BB <: Newtype[A]#Type, C <: AnyRef](implicit B: Bijection[A, BB],
+                                                                            C: A => C): Nullable.Aux[BB, C] =
     makeConversion((implicitly[Bijection[A, BB]].from _).andThen(C))
 }
 
