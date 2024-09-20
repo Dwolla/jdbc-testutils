@@ -11,7 +11,7 @@ object OptionsToNull extends Poly1 {
 }
 
 /**
- * Typeclass for converting a type `A` to a type `B` that is nullable.
+ * Typeclass for converting a type `A` to a type [[B]] that is nullable.
  *
  * Scala types that extend AnyVal are non-nullable and therefore must
  * be converted to another type to hold a null value. Typically this
@@ -24,7 +24,20 @@ object OptionsToNull extends Poly1 {
  * @tparam A The type of the value to be converted
  */
 sealed trait Nullable[A] { outer =>
-  type B // must be >: Null, but we can't enforce that or some of the instances below will fail
+  /**
+   * A nullable type related to `A`.
+   *
+   * Primitive types extending `scala.AnyVal` are non-nullable, but have
+   * nullable alternatives (e.g. `scala.Int` -> `java.lang.Integer`).
+   * That relationship would be encoded as
+   * {{{ Nullable[Int] { type B = Integer } }}}
+   *
+   * [[B]] must be `>: Null`, but we can't enforce that universally or
+   * some of the instances below will fail. If [[B]] can be `>: Null`,
+   * use `SafeNullable` instead.
+   */
+  type B
+
   val f: A => B
 
   final def orNull(maybeA: Option[A]): B =
@@ -37,13 +50,17 @@ sealed trait Nullable[A] { outer =>
            * compiler because the Smithy4s schema types don't have
            * that constraint.
            */
-        null.asInstanceOf[B] // TODO suspicious cast
+        null.asInstanceOf[B]
     }
 
   final def contramap[T](cmf: T => A): Nullable.Aux[T, B] = new Nullable[T] {
     override type B = outer.B
     override val f: T => B = outer.f.compose(cmf)
   }
+}
+
+private sealed trait SafeNullable[A] extends Nullable[A] {
+  override type B >: Null
 }
 
 object Nullable extends Smithy4sNullableInstances {
@@ -59,20 +76,18 @@ object Nullable extends Smithy4sNullableInstances {
   implicit val nullableBoolean: Nullable.Aux[Boolean, java.lang.Boolean] = makeConversion(boolean2Boolean)
   implicit val nullableByte: Nullable.Aux[Byte, java.lang.Byte] = makeConversion(byte2Byte)
 
-  implicit def nullableAnyRef[A >: Null]: Nullable.Aux[A, A] = makeIdentity
-
-  private[jdbc] def makeIdentity[A]: Nullable.Aux[A, A] = new Nullable[A] {
+  implicit def nullableAnyRef[A >: Null]: Nullable.Aux[A, A] = new SafeNullable[A] {
     override type B = A
     override val f: A => B = identity
   }
 
-  private[jdbc] def makeConversion[A, B1 >: Null](f1: A => B1): Nullable.Aux[A, B1] = new Nullable[A] {
+  private[jdbc] def makeConversion[A, B1 >: Null](f1: A => B1): Nullable.Aux[A, B1] = new SafeNullable[A] {
     override type B = B1
     override val f: A => B = f1
   }
 
   implicit def nullableFromBijection[A >: Null, BB <: Newtype[A]#Type](implicit B: Bijection[A, BB]): Nullable.Aux[BB, A] =
-    new Nullable[BB] {
+    new SafeNullable[BB] {
       override type B = A
       override val f: BB => A = implicitly[Bijection[A, BB]].from
     }
@@ -95,6 +110,10 @@ private object SchemaVisitorNullable extends CachedSchemaCompiler.Impl[Nullable]
 }
 
 private class SchemaVisitorNullable(override protected val cache: CompilationCache[Nullable]) extends SchemaVisitor.Cached[Nullable] { self =>
+  private def makeIdentity[A]: Nullable.Aux[A, A] = new Nullable[A] {
+    override type B = A
+    override val f: A => B = identity
+  }
   override def primitive[P](shapeId: ShapeId, hints: Hints, tag: Primitive[P]): Nullable[P] =
     Primitive.deriving[Nullable].apply(tag)
 
@@ -102,32 +121,32 @@ private class SchemaVisitorNullable(override protected val cache: CompilationCac
                                    hints: Hints,
                                    tag: CollectionTag[C],
                                    member: Schema[A]): Nullable.Aux[C[A], C[A]] =
-    Nullable.makeIdentity
+    makeIdentity[C[A]]
 
   override def map[K, V](shapeId: ShapeId,
                          hints: Hints,
                          key: Schema[K],
                          value: Schema[V]): Nullable.Aux[Map[K, V], Map[K, V]] =
-    Nullable.makeIdentity
+    makeIdentity[Map[K, V]]
 
   override def enumeration[E](shapeId: ShapeId,
                               hints: Hints,
                               tag: EnumTag[E],
                               values: List[EnumValue[E]],
                               total: E => EnumValue[E]): Nullable.Aux[E, E] =
-    Nullable.makeIdentity
+    makeIdentity[E]
 
   override def struct[S](shapeId: ShapeId,
                          hints: Hints,
                          fields: Vector[Field[S, ?]],
                          make: IndexedSeq[Any] => S): Nullable.Aux[S, S] =
-    Nullable.makeIdentity
+    makeIdentity[S]
 
   override def union[U](shapeId: ShapeId,
                         hints: Hints,
                         alternatives: Vector[Alt[U, ?]],
                         dispatch: Alt.Dispatcher[U]): Nullable.Aux[U, U] =
-    Nullable.makeIdentity
+    makeIdentity[U]
 
   override def biject[A, B](schema: Schema[A],
                             bijection: Bijection[A, B]): Nullable[B] =

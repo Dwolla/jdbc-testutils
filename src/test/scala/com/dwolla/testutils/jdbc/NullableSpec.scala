@@ -9,21 +9,22 @@ class NullableSpec
   extends ScalaCheckSuite
     with Smithy4sArbitraries {
 
-  testSchemaType[MySmithy4sNewtype]("Empty newtypes are mapped to null")
-  testSchemaType[MyList]("Empty lists are mapped to null")
-  testSchemaType[MyMap]("Empty maps are mapped to null")
-  testSchemaType[MyStructure]("Empty structures are mapped to null")
-  testSchemaType[MyUnion]("Empty unions are mapped to null")
-  testSchemaType[MyEnum]("Empty enums are mapped to null")
-  testSchemaType[MyRecursive]("Empty recursive structures are mapped to null")
+  testSchemaType[MySmithy4sNewtype]("Empty newtypes are mapped to null via Schema")
+  testSchemaType[MyList]("Empty lists are mapped to null via Schema")
+  testSchemaType[MyMap]("Empty maps are mapped to null via Schema")
+  testSchemaType[MyStructure]("Empty structures are mapped to null via Schema")
+  testSchemaType[MyUnion]("Empty unions are mapped to null via Schema")
+  testSchemaType[MyEnum]("Empty enums are mapped to null via Schema")
+  testSchemaType[MyRecursive]("Empty recursive structures are mapped to null via Schema")
 
-  testBijectionType(MySmithy4sNewtype)("Empty newtypes are mapped to null")
-  testBijectionType(MyList)("Empty lists are mapped to null")
-  testBijectionType(MyMap)("Empty maps are mapped to null")
-  testNullableType[MyStructure]("Empty structures are mapped to null")
-  testNullableType[MyUnion]("Empty unions are mapped to null")
-  testNullableType[MyEnum]("Empty enums are mapped to null")
-  testNullableType[MyRecursive]("Empty recursive structures are mapped to null")
+  testBijectionType(MySmithy4sNewtype)("Empty newtypes are mapped to null via Bijection")
+  testBijectionType(MyList)("Empty lists are mapped to null via Bijection")
+  testBijectionType(MyMap)("Empty maps are mapped to null via Bijection")
+
+  testNullableType[MyStructure]("Empty structures are mapped to null via nullableAnyRef")
+  testNullableType[MyUnion]("Empty unions are mapped to null via nullableAnyRef")
+  testNullableType[MyEnum]("Empty enums are mapped to null via nullableAnyRef")
+  testNullableType[MyRecursive]("Empty recursive structures are mapped to null via nullableAnyRef")
 
   private implicit def optionSchema[A : Schema]: Schema[Option[A]] = Schema.option(Schema[A])
 
