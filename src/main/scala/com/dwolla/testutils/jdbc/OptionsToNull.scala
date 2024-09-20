@@ -2,8 +2,8 @@ package com.dwolla.testutils.jdbc
 
 import org.typelevel.scalaccompat.annotation.unused
 import shapeless.*
-import smithy4s.schema.*
 import smithy4s.{Schema, *}
+import smithy4s.schema.*
 
 object OptionsToNull extends Poly1 {
   implicit def identityIfNotAnOption[A](implicit @unused ev: A <:!< Option[?]): Case[A] = at(identity)
@@ -66,14 +66,24 @@ object Nullable extends Smithy4sNullableInstances {
     override val f: A => B = identity
   }
 
-  private[jdbc] def makeConversion[A, B1](f1: A => B1): Nullable.Aux[A, B1] = new Nullable[A] {
+  private[jdbc] def makeConversion[A, B1 >: Null](f1: A => B1): Nullable.Aux[A, B1] = new Nullable[A] {
     override type B = B1
     override val f: A => B = f1
   }
+
+  implicit def nullableFromBijection[A >: Null, BB <: Newtype[A]#Type](implicit B: Bijection[A, BB]): Nullable.Aux[BB, A] =
+    new Nullable[BB] {
+      override type B = A
+      override val f: BB => A = implicitly[Bijection[A, BB]].from
+    }
+
+  implicit def nullableFromPrimitiveBijection[A, BB <: Newtype[A]#Type, C >: Null](implicit B: Bijection[A, BB],
+                                                                                   C: A => C): Nullable.Aux[BB, C] =
+    makeConversion((implicitly[Bijection[A, BB]].from _).andThen(C))
 }
 
 trait Smithy4sNullableInstances {
-  implicit def fromSchema[A : Schema]: Nullable[A] =
+  def fromSchema[A : Schema]: Nullable[A] =
     SchemaVisitorNullable.fromSchema(Schema[A], CompilationCache.make[Nullable])
 }
 
